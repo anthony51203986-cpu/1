@@ -1,0 +1,70 @@
+name: Deploy
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Debug - Show files
+        run: |
+          echo "Files in repository:"
+          ls -la
+          echo ""
+          echo "First 10 lines of index.html:"
+          head -10 index.html
+      
+      - name: Debug - Find placeholder
+        run: |
+          if grep -q "GROQ_API_KEY_PLACEHOLDER" index.html; then
+            echo "✅ Placeholder found"
+          else
+            echo "❌ Placeholder NOT found"
+            echo "Searching for any GROQ text:"
+            grep -i "groq" index.html || echo "No groq text found"
+          fi
+      
+      - name: Inject API Key
+        run: |
+          echo "Before injection - checking placeholder:"
+          grep "GROQ_API_KEY_PLACEHOLDER" index.html || echo "Not found"
+          
+          sed -i 's|GROQ_API_KEY_PLACEHOLDER|'"${{ secrets.GROQ_API_KEY }}"'|g' index.html
+          
+          echo "After injection - checking if placeholder remains:"
+          if grep -q "GROQ_API_KEY_PLACEHOLDER" index.html; then
+            echo "❌ Placeholder STILL present - injection failed"
+          else
+            echo "✅ Placeholder replaced"
+          fi
+      
+      - name: Verify injection result
+        run: |
+          echo "Lines containing API_KEY after injection:"
+          grep -n "API_KEY" index.html || echo "No API_KEY lines found"
+      
+      - uses: actions/configure-pages@v5
+      
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+      
+      - uses: actions/deploy-pages@v4
+        id: deployment
