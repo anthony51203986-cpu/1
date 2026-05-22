@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Groq Test - Cecilia</title>
+    <title>Groq Tester - Cecilia</title>
     <style>
         body {
             font-family: system-ui, -apple-system, sans-serif;
@@ -100,7 +100,7 @@
         // Check if key was injected
         const keyStatus = document.getElementById('keyStatus');
         if (GROQ_API_KEY === "GROQ_API_KEY_PLACEHOLDER") {
-            keyStatus.innerHTML = '❌ NOT INJECTED (placeholder still present)';
+            keyStatus.innerHTML = '❌ NOT INJECTED YET(placeholder still present)';
             keyStatus.style.color = '#f87171';
         } else if (GROQ_API_KEY.length > 10) {
             keyStatus.innerHTML = '✅ INJECTED successfully';
