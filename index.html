@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Groq Test - Cecilia</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #0a0c15;
+            color: #e2e8f0;
+        }
+        .container {
+            background: #1a1f35;
+            border-radius: 24px;
+            padding: 24px;
+        }
+        h1 {
+            font-size: 24px;
+            margin: 0 0 8px 0;
+        }
+        .sub {
+            color: #8ba3c4;
+            margin-bottom: 24px;
+        }
+        input, button {
+            padding: 12px 16px;
+            font-size: 16px;
+            border-radius: 12px;
+            border: none;
+        }
+        input {
+            flex: 1;
+            background: #0f1322;
+            border: 1px solid #2a345a;
+            color: white;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .flex {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .response {
+            background: #0f1322;
+            border-radius: 16px;
+            padding: 16px;
+            border: 1px solid #2a345a;
+            min-height: 100px;
+            white-space: pre-wrap;
+        }
+        .error {
+            color: #f87171;
+        }
+        .status {
+            font-size: 12px;
+            color: #10b981;
+            margin-top: 12px;
+        }
+        hr {
+            border-color: #2a345a;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧠 Groq API Test</h1>
+        <div class="sub">Quick Q&A - Testing API key injection</div>
+        
+        <div class="flex">
+            <input type="text" id="question" placeholder="Ask something... e.g., What is 2+2?" autocomplete="off">
+            <button id="askBtn">Ask</button>
+        </div>
+        
+        <div class="response" id="response">
+            💡 Ask a question. The API key will be injected during build.
+        </div>
+        <div class="status" id="status"></div>
+        
+        <hr>
+        <div style="font-size: 12px; color: #6a7894;">
+            🔑 API Key Status: <span id="keyStatus">Checking...</span>
+        </div>
+    </div>
+
+    <script>
+        // PLACEHOLDER - will be replaced by GitHub Actions
+        const GROQ_API_KEY = "GROQ_API_KEY_PLACEHOLDER";
+        const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
+        
+        // Check if key was injected
+        const keyStatus = document.getElementById('keyStatus');
+        if (GROQ_API_KEY === "GROQ_API_KEY_PLACEHOLDER") {
+            keyStatus.innerHTML = '❌ NOT INJECTED (placeholder still present)';
+            keyStatus.style.color = '#f87171';
+        } else if (GROQ_API_KEY.length > 10) {
+            keyStatus.innerHTML = '✅ INJECTED successfully';
+            keyStatus.style.color = '#10b981';
+        } else {
+            keyStatus.innerHTML = '⚠️ Unknown status';
+        }
+        
+        async function askGroq() {
+            const question = document.getElementById('question').value.trim();
+            if (!question) return;
+            
+            const responseDiv = document.getElementById('response');
+            const statusDiv = document.getElementById('status');
+            const askBtn = document.getElementById('askBtn');
+            
+            responseDiv.innerHTML = '🤔 Thinking...';
+            statusDiv.innerHTML = 'Calling Groq API...';
+            askBtn.disabled = true;
+            
+            try {
+                const res = await fetch(GROQ_API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${GROQ_API_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model: 'llama-3.1-8b-instant',
+                        messages: [
+                            { role: 'user', content: question }
+                        ],
+                        temperature: 0.7,
+                        max_tokens: 200
+                    })
+                });
+                
+                statusDiv.innerHTML = `Response status: ${res.status}`;
+                
+                if (!res.ok) {
+                    const error = await res.text();
+                    throw new Error(`${res.status}: ${error.substring(0, 200)}`);
+                }
+                
+                const data = await res.json();
+                const answer = data.choices[0]?.message?.content || 'No response';
+                responseDiv.innerHTML = `<strong>Q:</strong> ${question}<br><br><strong>A:</strong> ${answer}`;
+                statusDiv.innerHTML = '✅ Response received';
+                
+            } catch (err) {
+                console.error(err);
+                responseDiv.innerHTML = `<span class="error">❌ Error: ${err.message}</span>`;
+                statusDiv.innerHTML = '❌ Request failed';
+            } finally {
+                askBtn.disabled = false;
+            }
+        }
+        
+        document.getElementById('askBtn').onclick = askGroq;
+        document.getElementById('question').onkeypress = (e) => {
+            if (e.key === 'Enter') askGroq();
+        };
+        
+        // Show key preview (first 6 chars only for safety)
+        if (GROQ_API_KEY && GROQ_API_KEY !== "GROQ_API_KEY_PLACEHOLDER") {
+            console.log("Key loaded:", GROQ_API_KEY.substring(0, 6) + "...");
+        }
+    </script>
+</body>
+</html>
