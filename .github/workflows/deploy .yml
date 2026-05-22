@@ -1,0 +1,32 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Inject Key
+        run: |
+          echo "Before:"
+          grep "GROQ_API_KEY" index.html
+          sed -i 's/GROQ_API_KEY_PLACEHOLDER/${{ secrets.GROQ_API_KEY }}/g' index.html
+          echo "After:"
+          grep "GROQ_API_KEY" index.html
+      
+      - name: Upload
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+      
+      - name: Deploy
+        uses: actions/deploy-pages@v4 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
